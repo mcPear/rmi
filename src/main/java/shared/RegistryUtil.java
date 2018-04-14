@@ -37,6 +37,10 @@ public class RegistryUtil {
                 .collect(Collectors.toList());
     }
 
+    public static int getServersCount() throws RemoteException {
+        return LocateRegistry.getRegistry("localhost").list().length;
+    }
+
     private static String addressToService(String address) {
         return address.replace("//localhost/", "");
     }

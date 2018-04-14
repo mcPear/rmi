@@ -22,7 +22,7 @@ public class Hybrid {
         String nextAddress = RegistryUtil.getNextUnregisteredAddress();
 
         try {
-            CalculateInputObject object = new CalculateInputObjectImpl();
+            CalculateObject object = new CalculateObjectImpl();
             Naming.rebind(nextAddress, object);
             System.out.println("Worker server is registered now :-) on " + nextAddress);
         } catch (Exception e) {
@@ -32,22 +32,22 @@ public class Hybrid {
     }
 
     private static void runAsFarmer() throws RemoteException {
-        List<CalculateInputObject> calculateObjects = fetchCalculateObjects();
+        List<CalculateObject> calculateObjects = fetchCalculateObjects();
         runRemoteInputCalculateObjects(calculateObjects);
     }
 
 
-    private static List<CalculateInputObject> fetchCalculateObjects() throws RemoteException {
-        List<CalculateInputObject> calculateObjects = new ArrayList<>();
+    private static List<CalculateObject> fetchCalculateObjects() throws RemoteException {
+        List<CalculateObject> calculateObjects = new ArrayList<>();
         List<String> registeredAddresses = RegistryUtil.getRegisteredAddresses();
         registeredAddresses.forEach(address -> calculateObjects.add(fetchCalculateObject(address)));
         return calculateObjects;
     }
 
-    private static CalculateInputObject fetchCalculateObject(String address) {
-        CalculateInputObject object;
+    private static CalculateObject fetchCalculateObject(String address) {
+        CalculateObject object;
         try {
-            object = (CalculateInputObject) Naming.lookup(address);
+            object = (CalculateObject) Naming.lookup(address);
         } catch (Exception e) {
             System.out.println("Nie mozna pobrac referencji do " + address);
             e.printStackTrace();
@@ -57,20 +57,30 @@ public class Hybrid {
         return object;
     }
 
-    private static Double runRemoteInputCalculateObjects(List<CalculateInputObject> calculateObjects) {
-        double result = 0;
-        for (CalculateInputObject object : calculateObjects) {
-            result += runRemoteInputCalculateObject(object);
+    private static Double runRemoteInputCalculateObjects(List<CalculateObject> calculateObjects) throws RemoteException {
+        int theBestIterationsCount = 40;
+        double result = 3;
+//        int iterations = 10;
+        int iterations = theBestIterationsCount / RegistryUtil.getServersCount();
+        if (iterations % 2 == 1) {
+            iterations += 1;
         }
-        System.out.println("Wynik zbiorczy: "+result);
+        int incrementationJ = iterations * 2;
+        int j = 2;
+        Parameter parameter;
+        for (CalculateObject object : calculateObjects) {
+            parameter = new Parameter("", j, j + incrementationJ);
+            result += runRemoteInputCalculateObject(object, parameter);
+            j += incrementationJ;
+        }
+        System.out.println("Wynik zbiorczy: " + result);
         return result;
     }
 
-    private static Double runRemoteInputCalculateObject(CalculateInputObject object) {
-        InputType inputType = new InputType("add", 2.3, 3.05);
+    private static Double runRemoteInputCalculateObject(CalculateObject object, Parameter parameter) {
         ResultType result;
         try {
-            result = object.calculate(inputType);
+            result = object.calculate(parameter);
         } catch (Exception e) {
             System.out.println("Blad zdalnego wywolania.");
             e.printStackTrace();
