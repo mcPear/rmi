@@ -33,7 +33,8 @@ public class Hybrid {
 
     private static void runAsFarmer() throws RemoteException {
         List<CalculateObject> calculateObjects = fetchCalculateObjects();
-        runRemoteInputCalculateObjects(calculateObjects);
+        //calculatePiOnRemoteObjects(calculateObjects);
+        calculateEulerNumberOnRemoteObjects(calculateObjects);
     }
 
 
@@ -57,7 +58,7 @@ public class Hybrid {
         return object;
     }
 
-    private static Double runRemoteInputCalculateObjects(List<CalculateObject> calculateObjects) throws RemoteException {
+    private static Double calculatePiOnRemoteObjects(List<CalculateObject> calculateObjects) throws RemoteException {
         int theBestIterationsCount = 40;
         double result = 3;
 //        int iterations = 10;
@@ -69,15 +70,35 @@ public class Hybrid {
         int j = 2;
         Parameter parameter;
         for (CalculateObject object : calculateObjects) {
-            parameter = new Parameter("", j, j + incrementationJ);
-            result += runRemoteInputCalculateObject(object, parameter);
+            parameter = new Parameter("pi", j, j + incrementationJ);
+            result += runRemoteInputCalculateObject(object, parameter).result;
             j += incrementationJ;
         }
         System.out.println("Wynik zbiorczy: " + result);
         return result;
     }
 
-    private static Double runRemoteInputCalculateObject(CalculateObject object, Parameter parameter) {
+    private static Double calculateEulerNumberOnRemoteObjects(List<CalculateObject> calculateObjects) throws RemoteException {
+        int theBestIterationsCount = 30;
+        double sum = 0;
+        int iterations = theBestIterationsCount / RegistryUtil.getServersCount();
+        int j = 0;
+        double factorial = 1;
+        Parameter parameter;
+        ResultType result = ResultType.empty();
+        for (CalculateObject object : calculateObjects) {
+            parameter = new Parameter("euler", j, j + iterations, factorial);
+            result = runRemoteInputCalculateObject(object, parameter);
+            sum += result.result;
+            j += iterations;
+            factorial = result.factorial;
+            System.out.println(factorial);
+        }
+        System.out.println("Wynik zbiorczy: " + sum);
+        return result.result;
+    }
+
+    private static ResultType runRemoteInputCalculateObject(CalculateObject object, Parameter parameter) {
         ResultType result;
         try {
             result = object.calculate(parameter);
@@ -87,7 +108,7 @@ public class Hybrid {
             return null;
         }
         System.out.println("Wynik = " + result.result + ", description: " + result.description);
-        return result.result;
+        return result;
     }
 
     private static boolean isServer(String name) {
